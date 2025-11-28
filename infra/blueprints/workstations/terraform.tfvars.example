@@ -101,7 +101,7 @@ cws_configs = {
     #]
     #machine_type = "e2-standard-4"  # Defaults to "n1-standard-96"
     persistent_disk_fs_type = "ext4"
-    persistent_disk_reclaim_policy = "DELETE"
+    #persistent_disk_reclaim_policy = "DELETE" # Defaults to "RETAIN"
     persistent_disk_size_gb = 200
     #persistent_disk_source_snapshot = null  # Defaults to null
     persistent_disk_type = "pd-ssd"
