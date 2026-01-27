@@ -37,7 +37,7 @@ Below is an example that sets up:
 
 ```terraform
 module "cicd_foundation" {
-  source = "github.com/GoogleCloudPlatform/cicd-foundation//infra/modules/cicd_foundation?ref=v4.0.0"
+  source = "github.com/GoogleCloudPlatform/cicd-foundation//infra/modules/cicd_foundation?ref=v5.0.0"
 
   project_id = "your-gcp-project-id"
 

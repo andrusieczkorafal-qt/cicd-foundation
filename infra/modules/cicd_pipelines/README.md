@@ -55,7 +55,7 @@ Below is a basic usage example deploying a Cloud Run application named
 
 ```terraform
 module "cicd_pipelines" {
-  source = "github.com/GoogleCloudPlatform/cicd-foundation//infra/modules/cicd_pipelines?ref=v4.0.0"
+  source = "github.com/GoogleCloudPlatform/cicd-foundation//infra/modules/cicd_pipelines?ref=v5.0.0"
 
   project_id = "your-gcp-project-id"
   namespace  = "my-app"
