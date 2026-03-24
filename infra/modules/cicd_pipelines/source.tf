@@ -14,12 +14,14 @@
 
 locals {
   # go/keep-sorted start
-  cloudbuild_service_agent        = "serviceAccount:service-${data.google_project.project.number}@gcp-sa-cloudbuild.iam.gserviceaccount.com"
+  cloudbuild_service_agent = "serviceAccount:service-${data.google_project.project.number}@gcp-sa-cloudbuild.iam.gserviceaccount.com"
   cloudbuild_webhook_uri_template = "https://cloudbuild.googleapis.com/v1/projects/%s/locations/%s/triggers/%s:webhook"
+  create_ssm_ca_pool = local.source.ssm && ! local.ssm_instance_is_provided && var.secure_source_manager_create_ca_pool && var.secure_source_manager_ca_pool == null
   ssm_instance_accessor_members = toset(concat(
     [module.service_account_cloud_build.iam_email],
     length(google_service_account.git_clone_and_push) > 0 ? [google_service_account.git_clone_and_push[0].member] : [],
   ))
+  ssm_instance_ca_pool = var.secure_source_manager_ca_pool != null ? var.secure_source_manager_ca_pool : (local.create_ssm_ca_pool ? google_privateca_ca_pool.ssm_ca_pool[0].id : null)
   ssm_instance_id = local.source.ssm ? (
     local.ssm_instance_is_provided ?
     var.secure_source_manager_instance_id :
@@ -32,6 +34,58 @@ locals {
   # go/keep-sorted end
 }
 
+# Secure Source Manager (SSM) CA Pool
+
+resource "google_privateca_ca_pool" "ssm_ca_pool" {
+  count = local.create_ssm_ca_pool ? 1 : 0
+
+  name     = "${local.prefix}ssm-ca-pool"
+  location = var.secure_source_manager_region
+  tier     = "ENTERPRISE"
+  project  = data.google_project.project.project_id
+  labels   = local.common_labels
+  publishing_options {
+    publish_ca_cert = true
+    publish_crl     = true
+  }
+}
+
+resource "google_privateca_certificate_authority" "ssm_root_ca" {
+  count = local.create_ssm_ca_pool ? 1 : 0
+
+  pool                     = google_privateca_ca_pool.ssm_ca_pool[0].name
+  certificate_authority_id = "${local.prefix}ssm-root-ca"
+  location                 = var.secure_source_manager_region
+  project                  = data.google_project.project.project_id
+  deletion_protection      = false
+  config {
+    subject_config {
+      subject {
+        organization = var.secure_source_manager_ca_organization
+        common_name  = var.secure_source_manager_ca_common_name
+      }
+    }
+    x509_config {
+      ca_options {
+        is_ca = true
+      }
+      key_usage {
+        base_key_usage {
+          cert_sign = true
+          crl_sign  = true
+        }
+        extended_key_usage {
+          server_auth = true
+        }
+      }
+    }
+  }
+  lifetime = var.secure_source_manager_ca_lifetime_seconds
+  key_spec {
+    algorithm = var.secure_source_manager_ca_key_algorithm
+  }
+}
+
 # Secure Source Manager (SSM) Instance
 
 resource "google_secure_source_manager_instance" "cicd_foundation" {
@@ -42,6 +96,13 @@ resource "google_secure_source_manager_instance" "cicd_foundation" {
   instance_id     = var.secure_source_manager_instance_name
   labels          = local.common_labels
   deletion_policy = var.secure_source_manager_deletion_policy
+  dynamic "private_config" {
+    for_each = local.ssm_instance_ca_pool == null ? [] : [1]
+    content {
+      is_private = true
+      ca_pool    = local.ssm_instance_ca_pool
+    }
+  }
 
   lifecycle {
     ignore_changes = [

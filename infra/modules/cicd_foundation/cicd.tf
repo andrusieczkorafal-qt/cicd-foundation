@@ -34,6 +34,7 @@ module "cicd_pipelines" {
   canary_verify                               = var.canary_verify
   cloud_build_api_key_display_name            = var.cloud_build_api_key_display_name
   cloud_build_api_key_name                    = var.cloud_build_api_key_name
+  cloud_build_peered_network                  = var.cloud_build_peered_network
   cloud_build_pool_disk_size_gb               = var.cloud_build_pool_disk_size_gb
   cloud_build_pool_machine_type               = var.cloud_build_pool_machine_type
   cloud_build_pool_name                       = var.cloud_build_pool_name
@@ -64,6 +65,12 @@ module "cicd_pipelines" {
   scheduler_default_region                    = var.scheduler_default_region
   secret_manager_region                       = var.secret_manager_region
   secure_source_manager_always_create         = var.secure_source_manager_always_create
+  secure_source_manager_ca_common_name        = var.secure_source_manager_ca_common_name
+  secure_source_manager_ca_key_algorithm      = var.secure_source_manager_ca_key_algorithm
+  secure_source_manager_ca_lifetime_seconds   = var.secure_source_manager_ca_lifetime_seconds
+  secure_source_manager_ca_organization       = var.secure_source_manager_ca_organization
+  secure_source_manager_ca_pool               = var.secure_source_manager_ca_pool
+  secure_source_manager_create_ca_pool        = var.secure_source_manager_create_ca_pool
   secure_source_manager_deletion_policy       = var.secure_source_manager_deletion_policy
   secure_source_manager_instance_id           = var.secure_source_manager_instance_id
   secure_source_manager_instance_name         = var.secure_source_manager_instance_name

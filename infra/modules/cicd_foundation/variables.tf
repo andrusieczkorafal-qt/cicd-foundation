@@ -226,6 +226,46 @@ variable "secure_source_manager_always_create" {
   default     = false
 }
 
+variable "secure_source_manager_ca_common_name" {
+  type        = string
+  description = "The common name for the root CA certificate."
+  default     = "SSM Root CA"
+}
+
+variable "secure_source_manager_ca_key_algorithm" {
+  type        = string
+  description = "The key algorithm to use for the root CA."
+  default     = "RSA_PKCS1_4096_SHA256"
+}
+
+variable "secure_source_manager_ca_lifetime_seconds" {
+  type        = string
+  description = "The lifetime of the root CA certificate in seconds."
+  default     = "315360000s" # 10 years
+}
+
+variable "secure_source_manager_ca_organization" {
+  type        = string
+  description = "The organization name for the root CA certificate."
+  default     = "Terraform"
+}
+
+variable "secure_source_manager_ca_pool" {
+  type        = string
+  description = "The CA pool to use for issuing instance certificates for a private Secure Source Manager instance, in the format projects/{project}/locations/{location}/caPools/{ca_pool}. If null and secure_source_manager_create_ca_pool is true, a new pool will be created."
+  default     = null
+}
+
+variable "secure_source_manager_create_ca_pool" {
+  type        = bool
+  description = "If true, and secure_source_manager_ca_pool is not set, creates a new CA Pool and Root CA for use with a private Secure Source Manager instance."
+  default     = false
+  validation {
+    condition     = ! var.secure_source_manager_create_ca_pool || var.secure_source_manager_ca_pool == null
+    error_message = "Cannot set secure_source_manager_create_ca_pool to true when secure_source_manager_ca_pool is provided."
+  }
+}
+
 variable "secure_source_manager_deletion_policy" {
   type        = string
   description = "The deletion policy for the Secure Source Manager instance and repository. One of DELETE, PREVENT, or ABANDON."
@@ -294,6 +334,12 @@ variable "cloud_build_api_key_name" {
     and running `terraform import`.
   EOT
   default     = "cloudbuild"
+}
+
+variable "cloud_build_peered_network" {
+  type        = string
+  description = "If set, configures Cloud Build to use a private worker pool connected to the specified VPC network. The network must be provided in the format projects/{project}/global/networks/{network}."
+  default     = null
 }
 
 variable "cloud_build_pool_disk_size_gb" {

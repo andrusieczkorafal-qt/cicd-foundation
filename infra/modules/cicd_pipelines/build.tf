@@ -167,6 +167,7 @@ locals {
         requested_verify_option = "VERIFIED"
         logging                 = "CLOUD_LOGGING_ONLY"
         machine_type            = app_source_config.config.build == null ? var.build_machine_type_default : app_source_config.config.build.machine_type
+        worker_pool             = var.cloud_build_peered_network != null ? google_cloudbuild_worker_pool.ci_pool[0].id : null
       }
     }
   }
@@ -248,6 +249,22 @@ module "service_account_cloud_build" {
   }
 }
 
+resource "google_cloudbuild_worker_pool" "ci_pool" {
+  count = var.cloud_build_peered_network != null ? 1 : 0
+
+  project  = data.google_project.project.project_id
+  name     = "${local.prefix}${var.cloud_build_pool_name}-ci"
+  location = var.cloud_build_region
+  network_config {
+    peered_network = var.cloud_build_peered_network
+  }
+  worker_config {
+    disk_size_gb   = var.cloud_build_pool_disk_size_gb
+    machine_type   = var.cloud_build_pool_machine_type
+    no_external_ip = true
+  }
+}
+
 resource "google_cloudbuild_worker_pool" "pool" {
   for_each = { for k, v in var.stages : k => v if v.peered_network != null }
 
@@ -264,4 +281,78 @@ resource "google_cloudbuild_worker_pool" "pool" {
   }
 }
 
+resource "google_cloudbuild_trigger" "ci_pipeline" {
+  for_each = local.ci_build_specs
 
+  project         = local.build_project_id
+  name            = "${local.prefix}${each.value.name}${each.value.postfix}"
+  location        = var.cloud_build_region
+  service_account = module.service_account_cloud_build.id
+  description     = "Terraform-managed."
+
+  # go/keep-sorted start block=yes newline_separated=yes
+  dynamic "github" {
+    for_each = local.ci_apps_flags[each.key].is_github_trigger ? [1] : []
+
+    content {
+      owner = local.app_source[each.value.name].github.owner
+      name  = local.app_source[each.value.name].github.repo
+      push {
+        branch = local.app_source[each.value.name].github.branch_pattern
+      }
+    }
+  }
+
+  dynamic "source_to_build" {
+    for_each = local.ci_apps_flags[each.key].needs_source_to_build ? [1] : []
+
+    content {
+      uri       = local.source_uris[each.value.name]
+      ref       = local.ci_apps_flags[each.key].is_git_repo_manual ? "refs/heads/${local.app_source[each.value.name].git_repo.branch}" : "refs/heads/${var.git_branch_trigger}"
+      repo_type = "GITHUB"
+    }
+  }
+
+  dynamic "webhook_config" {
+    for_each = local.ci_apps_flags[each.key].is_webhook_trigger ? [1] : []
+
+    content {
+      secret = google_secret_manager_secret_version.webhook_trigger[0].id
+    }
+  }
+  # go/keep-sorted end
+
+  build {
+    dynamic "step" {
+      for_each = each.value.steps
+
+      content {
+        # go/keep-sorted start prefix_order=id,name,wait_for,allow_failure,dir,entrypoint,args
+        id            = step.value.id
+        name          = step.value.name
+        wait_for      = step.value.wait_for
+        allow_failure = step.value.allow_failure
+        dir           = step.value.dir
+        entrypoint    = step.value.entrypoint
+        args          = step.value.args
+        # go/keep-sorted end
+      }
+    }
+    timeout = each.value.timeout
+    options {
+      requested_verify_option = each.value.options.requested_verify_option
+      logging                 = each.value.options.logging
+      machine_type            = each.value.options.machine_type
+      worker_pool             = each.value.options.worker_pool
+    }
+  }
+  included_files = local.ci_included_files[each.value.name]
+  substitutions  = local.ci_substitutions[each.key]
+
+  lifecycle {
+    ignore_changes = [
+      included_files,
+      source_to_build,
+    ]
+  }
+}

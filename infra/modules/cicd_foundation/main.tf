@@ -13,9 +13,9 @@
 # limitations under the License.
 
 locals {
-  activate_apis = [
+  activate_apis = concat([
     "artifactregistry.googleapis.com",
-  ]
+  ], var.secure_source_manager_create_ca_pool && var.secure_source_manager_ca_pool == null ? ["privateca.googleapis.com"] : [])
   all_apps = merge(local.cws_apps, var.apps)
   # Configuration for custom images used in Cloud Workstations.
   # The 'runtime' is set to "workstations" to indicate these are for Cloud Workstations.
