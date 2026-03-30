@@ -41,7 +41,7 @@ locals {
               "-c",
               <<-EOT
                 git clone "$${_GIT_CLONE_URL}" /workspace
-                if [ "$${_IS_GIT_REPO_MANUAL}" = "true" ]; then
+                if [ "$${_IS_GIT_REPO_WEBHOOK}" = "true" ]; then
                   cd /workspace
                   git checkout "$${_GIT_REPO_REF}"
                 elif [ -n "$${COMMIT_SHA}" ]; then
@@ -188,9 +188,9 @@ locals {
       _APP_NAME              = app_source_config.name
       _DOCKER_IMAGE_TAG      = var.docker_image_tag
       _GCLOUD_IMAGE_TAG      = var.gcloud_image_tag
-      _GIT_CLONE_URL         = local.ci_apps_flags[app_source_key].is_git_repo_manual ? local.app_source[app_source_config.name].git_repo.url : (local.app_source[app_source_config.name].has_ssm ? local.source_uris[app_source_config.name] : "")
+      _GIT_CLONE_URL         = local.ci_apps_flags[app_source_key].is_git_repo_webhook ? local.app_source[app_source_config.name].git_repo.url : (local.app_source[app_source_config.name].has_ssm ? local.source_uris[app_source_config.name] : "")
       _GIT_REPO_REF          = local.app_source[app_source_config.name].has_git_repo ? "refs/heads/${local.app_source[app_source_config.name].git_repo.branch}" : ""
-      _IS_GIT_REPO_MANUAL    = tostring(local.ci_apps_flags[app_source_key].is_git_repo_manual)
+      _IS_GIT_REPO_WEBHOOK   = tostring(local.ci_apps_flags[app_source_key].is_git_repo_webhook)
       _KMS_DIGEST_ALG        = var.kms_digest_alg
       _KMS_KEY_NAME          = var.kms_key_name
       _KRITIS_POLICY_BASE64  = base64encode(local.policy_content)
@@ -308,7 +308,7 @@ resource "google_cloudbuild_trigger" "ci_pipeline" {
 
     content {
       uri       = local.source_uris[each.value.name]
-      ref       = local.ci_apps_flags[each.key].is_git_repo_manual ? "refs/heads/${local.app_source[each.value.name].git_repo.branch}" : "refs/heads/${var.git_branch_trigger}"
+      ref       = "refs/heads/${var.git_branch_trigger}"
       repo_type = "GITHUB"
     }
   }

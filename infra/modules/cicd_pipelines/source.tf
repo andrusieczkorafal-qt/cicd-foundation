@@ -147,10 +147,10 @@ resource "google_secure_source_manager_repository_iam_binding" "repo_reader" {
   members       = [module.service_account_cloud_build.iam_email]
 }
 
-# Secure Source Manager (SSM) Webhook
+# Webhook
 
 resource "google_secret_manager_secret" "webhook_trigger" {
-  count = local.source.ssm ? 1 : 0
+  count = local.create_webhook_trigger ? 1 : 0
 
   project   = data.google_project.project.project_id
   secret_id = "${local.prefix}webhook-trigger"
@@ -164,13 +164,13 @@ resource "google_secret_manager_secret" "webhook_trigger" {
 }
 
 resource "random_id" "webhook_secret_key" {
-  count = local.source.ssm ? 1 : 0
+  count = local.create_webhook_trigger ? 1 : 0
 
   byte_length = 64
 }
 
 resource "google_secret_manager_secret_version" "webhook_trigger" {
-  count = local.source.ssm ? 1 : 0
+  count = local.create_webhook_trigger ? 1 : 0
 
   secret      = google_secret_manager_secret.webhook_trigger[0].id
   secret_data = random_id.webhook_secret_key[0].hex
@@ -186,7 +186,7 @@ data "google_iam_policy" "secret_accessor" {
 }
 
 resource "google_secret_manager_secret_iam_policy" "policy" {
-  count = local.source.ssm ? 1 : 0
+  count = local.create_webhook_trigger ? 1 : 0
 
   project     = google_secret_manager_secret.webhook_trigger[0].project
   secret_id   = google_secret_manager_secret.webhook_trigger[0].secret_id
@@ -315,5 +315,31 @@ resource "null_resource" "run_git_clone_and_push" {
     google_cloudbuild_trigger.git_clone_and_push,
     google_secure_source_manager_instance_iam_member.instance_accessor,
     google_secure_source_manager_repository_iam_binding.repo_writer_git_clone,
+  ]
+}
+
+resource "null_resource" "run_git_repo_trigger" {
+  for_each = {
+    for k, v in local.ci_apps_flags : k => v
+    if v.is_git_repo_webhook
+  }
+
+  triggers = {
+    trigger_id    = google_cloudbuild_trigger.ci_pipeline[each.key].id
+    build_json    = jsonencode(local.ci_build_specs[each.key].steps)
+    substitutions = jsonencode(local.ci_substitutions[each.key])
+  }
+
+  provisioner "local-exec" {
+    command = <<EOT
+      gcloud builds triggers run \
+        ${google_cloudbuild_trigger.ci_pipeline[each.key].name} \
+        --region=${var.cloud_build_region} \
+        --project=${local.build_project_id}
+    EOT
+  }
+
+  depends_on = [
+    google_cloudbuild_trigger.ci_pipeline,
   ]
 }

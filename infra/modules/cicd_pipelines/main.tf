@@ -64,7 +64,7 @@ locals {
 
   # A filtered product of applications and trigger types.
   # Each entry contains the name (from var.apps), the corresponding config (from var.apps), and the trigger type (from local.trigger_sources).
-  # Webhook triggers are only created if using SSM.
+  # Webhook triggers are created if using SSM or `git_repo`.
   # Manual and GitHub triggers are only created if using GitHub.
   ci_apps = {
     for app_source_pair in setproduct(keys(var.apps), ["github", "manual", "webhook"]) : contains(["github", "manual"], app_source_pair[1]) ? "${app_source_pair[0]}-${app_source_pair[1]}" : "${app_source_pair[0]}" => {
@@ -73,9 +73,9 @@ locals {
       trigger_type = app_source_pair[1]
     }
     if(
-      (app_source_pair[1] == "webhook" && local.app_source[app_source_pair[0]].has_ssm) ||
+      (app_source_pair[1] == "webhook" && (local.app_source[app_source_pair[0]].has_ssm || local.app_source[app_source_pair[0]].has_git_repo)) ||
       (app_source_pair[1] == "github" && local.app_source[app_source_pair[0]].has_github) ||
-      (app_source_pair[1] == "manual" && (local.app_source[app_source_pair[0]].has_github || local.app_source[app_source_pair[0]].has_git_repo))
+      (app_source_pair[1] == "manual" && local.app_source[app_source_pair[0]].has_github)
     )
   }
 
@@ -85,9 +85,9 @@ locals {
     for k, v in local.ci_apps : k => {
       is_github_trigger     = v.trigger_type == "github",
       is_webhook_trigger    = v.trigger_type == "webhook",
-      is_git_repo_manual    = v.trigger_type == "manual" && local.app_source[v.name].has_git_repo,
-      needs_source_to_build = v.trigger_type == "manual" && (local.app_source[v.name].has_github || local.app_source[v.name].has_git_repo),
-      needs_clone_step      = local.app_source[v.name].has_ssm || (v.trigger_type == "manual" && local.app_source[v.name].has_git_repo)
+      is_git_repo_webhook   = v.trigger_type == "webhook" && local.app_source[v.name].has_git_repo,
+      needs_source_to_build = v.trigger_type == "manual" && local.app_source[v.name].has_github,
+      needs_clone_step      = (v.trigger_type == "webhook" && local.app_source[v.name].has_git_repo) || local.app_source[v.name].has_ssm
     }
   }
 
@@ -102,6 +102,8 @@ locals {
   common_labels = {
     for k, v in merge(var.labels, local.default_labels) : lower(k) => lower(v)
   }
+
+  create_webhook_trigger = local.source.ssm || length([for k, v in local.ci_apps_flags : k if v.is_webhook_trigger]) > 0
 
   default_labels = {
     "tf_module_github_org"  = "GoogleCloudPlatform"
