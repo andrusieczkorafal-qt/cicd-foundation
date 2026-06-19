@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # Copyright 2026 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,21 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-apiVersion: skaffold/v3
-kind: Config
-metadata:
-  name: antigravity2-0
-requires:
-  - path: ../gnome/skaffold.yaml
-build:
-  artifacts:
-    - image: antigravity2-0
-      context: .
-      docker:
-        network: cloudbuild
-        buildArgs:
-          CWS_BASE_IMAGE_TAG: '{{.CWS_BASE_IMAGE_TAG | default "latest"}}'
-          GCP_REGION: '{{.GCP_REGION | default "us-central1"}}'
-      requires:
-        - image: gnome
-          alias: BASE_IMAGE
+if [[ $- == *i* ]]; then
+  if /google/bin/setup-workstation --needs-setup; then
+    /google/bin/setup-workstation
+  fi
+fi

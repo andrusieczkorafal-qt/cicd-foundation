@@ -141,7 +141,7 @@ setup_gnome_settings() {
     gsettings set org.gnome.shell.extensions.just-perfection screen-sharing-indicator false
     gsettings set org.gnome.shell.extensions.just-perfection screen-recording-indicator false
     gsettings set org.gnome.shell.extensions.just-perfection startup-status 0
-    gsettings set org.gnome.shell.extensions.just-perfection support-notifier-showed-version 999
+    gsettings set org.gnome.shell.extensions.just-perfection support-notifier-type 0
 
     gsettings set org.gnome.SessionManager auto-save-session true
     gsettings set org.gnome.desktop.screensaver lock-enabled false

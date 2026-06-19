@@ -28,6 +28,7 @@ ENV INSTALL_AGENT_DEVELOPMENT_KIT_PYTHON=${INSTALL_AGENT_DEVELOPMENT_KIT_PYTHON}
 # Register packages for centralized installation
 ENV EXTRA_PKGS=${ANTIGRAVITY_PKGS}
 ENV WORKSTATION_DEFAULT_APP="antigravity"
+ENV APP_STARTUP_DELAY=0
 
 # Merge assets into the container
 COPY assets/ /

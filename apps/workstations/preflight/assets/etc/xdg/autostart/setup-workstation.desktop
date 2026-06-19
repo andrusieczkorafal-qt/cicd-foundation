@@ -1,6 +1,4 @@
-#!/bin/bash
-
-# Copyright 2025-2026 Google LLC
+# Copyright 2026 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,27 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -euo pipefail
-
-install_adk() {
-  local enabled="${INSTALL_AGENT_DEVELOPMENT_KIT_PYTHON:-false}"
-
-  if [[ "${enabled}" == "true" ]]; then
-    echo "Installing Agent Development Kit (Python)..."
-
-    # Ensure pipx is ready
-    export PIPX_BIN_DIR=/usr/local/bin
-    export PIPX_HOME=/opt/pipx
-
-
-
-    echo "Agent Development Kit installed successfully."
-  else
-    echo "Agent Development Kit installation skipped."
-  fi
-}
-main() {
-  install_adk
-}
-
-main "$@"
+[Desktop Entry]
+Name=Cloud Workstation Setup
+Comment=Initializes the developer workspace
+Exec=bash -c 'if /google/bin/setup-workstation --needs-setup; then gnome-terminal --wait -- bash -c "/google/bin/setup-workstation"; fi'
+Terminal=false
+Type=Application
+X-GNOME-Autostart-enabled=true

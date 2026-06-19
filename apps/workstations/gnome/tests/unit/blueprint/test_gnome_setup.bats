@@ -91,5 +91,5 @@ setup() {
   [[ "$output" == *'gsettings set org.gnome.shell.extensions.just-perfection screen-sharing-indicator false'* ]]
   [[ "$output" == *'gsettings set org.gnome.shell.extensions.just-perfection screen-recording-indicator false'* ]]
   [[ "$output" == *'gsettings set org.gnome.shell.extensions.just-perfection startup-status 0'* ]]
-  [[ "$output" == *'gsettings set org.gnome.shell.extensions.just-perfection support-notifier-showed-version 999'* ]]
+  [[ "$output" == *'gsettings set org.gnome.shell.extensions.just-perfection support-notifier-type 0'* ]]
 }

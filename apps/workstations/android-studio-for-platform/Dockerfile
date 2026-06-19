@@ -15,30 +15,68 @@
 # limitations under the License.
 
 ARG GCP_REGION=us-central1
-
-# The BASE_IMAGE is resolved by Skaffold.
 ARG BASE_IMAGE
+ARG DEBIAN_FRONTEND=noninteractive
+ARG APT_OPTS="-y --no-install-recommends"
+ARG CURL_OPTS="-fsSL --retry 3 --connect-timeout 10 --max-time 300"
+ARG BUILDER_PKGS="\
+  config-package-dev \
+  curl \
+  debhelper-compat \
+  devscripts \
+  equivs \
+  git \
+  golang"
+ARG LIBTINFO5_VERSION="6.3-2ubuntu0.1_amd64"
+ARG RETRY_ATTEMPTS=3
+ARG RETRY_DELAY=5
+ARG CUTTLEFISH_RETRY_ATTEMPTS=8
+ARG ASFP_VERSION=canary
+ARG INSTALL_ABFS_CLIENT=false
+ARG AOSP_PKGS="\
+  bison \
+  build-essential \
+  curl \
+  flex \
+  fontconfig \
+  git-core \
+  gnome-terminal \
+  gnupg \
+  lib32z1-dev \
+  libc6-dev-i386 \
+  libgl1-mesa-dev \
+  libncurses6 \
+  libx11-dev \
+  libxml2-utils \
+  repo \
+  rsync \
+  unzip \
+  x11proto-core-dev \
+  xsltproc \
+  zip \
+  zlib1g-dev"
+ARG ABFS_PKGS="abfs-client git psmisc rsync unzip zip"
+ARG ASFP_DEB_URL="https://dl.google.com/android/asfp/asfp-${ASFP_VERSION}-current-linux.deb"
 
 ###############################################################
 # Stage: Base Provider (to get common.sh)
 ###############################################################
 FROM ${BASE_IMAGE} AS base-provider
+ARG BASE_IMAGE
 
 ###############################################################
 # Stage: Cuttlefish Builder
 ###############################################################
 FROM ${GCP_REGION}-docker.pkg.dev/cloud-workstations-images/predefined/code-oss AS cuttlefish-builder
-ARG DEBIAN_FRONTEND=noninteractive
-ARG APT_OPTS="-y --no-install-recommends"
-ARG CURL_OPTS="-fsSL --retry 3 --connect-timeout 10 --max-time 300"
-ARG BUILDER_PKGS="config-package-dev curl debhelper-compat devscripts equivs git golang"
-ARG LIBTINFO5_VERSION="6.3-2ubuntu0.1_amd64"
-ARG RETRY_ATTEMPTS=3
-ARG RETRY_DELAY=5
-ARG CUTTLEFISH_RETRY_ATTEMPTS=8
+ARG DEBIAN_FRONTEND
+ARG APT_OPTS
+ARG CURL_OPTS
+ARG BUILDER_PKGS
+ARG LIBTINFO5_VERSION
+ARG RETRY_ATTEMPTS
+ARG RETRY_DELAY
+ARG CUTTLEFISH_RETRY_ATTEMPTS
 ARG GCP_REGION
-
-SHELL ["/bin/bash", "-c"]
 
 # Use common.sh retry helper from base image
 COPY --from=base-provider /google/scripts/common.sh /google/scripts/common.sh
@@ -64,15 +102,14 @@ RUN . /google/scripts/common.sh && \
 # Stage: Main System
 ###############################################################
 FROM ${BASE_IMAGE}
-ARG ASFP_VERSION=canary
-ARG INSTALL_ABFS_CLIENT=false
-ARG DEBIAN_FRONTEND=noninteractive
-
-ARG APT_OPTS="-y --no-install-recommends"
-ARG CURL_OPTS="-fsSL --retry 3 --connect-timeout 10 --max-time 300"
-ARG AOSP_PKGS="bison build-essential curl flex fontconfig git-core gnome-terminal gnupg lib32z1-dev libc6-dev-i386 libgl1-mesa-dev libncurses6 libx11-dev libxml2-utils repo rsync unzip x11proto-core-dev xsltproc zip zlib1g-dev"
-ARG ABFS_PKGS="abfs-client git psmisc rsync unzip zip"
-ARG ASFP_DEB_URL="https://dl.google.com/android/asfp/asfp-${ASFP_VERSION}-current-linux.deb"
+ARG ASFP_VERSION
+ARG INSTALL_ABFS_CLIENT
+ARG DEBIAN_FRONTEND
+ARG APT_OPTS
+ARG CURL_OPTS
+ARG AOSP_PKGS
+ARG ABFS_PKGS
+ARG ASFP_DEB_URL
 
 ENV ASFP_VERSION=${ASFP_VERSION}
 ENV INSTALL_ABFS_CLIENT=${INSTALL_ABFS_CLIENT}

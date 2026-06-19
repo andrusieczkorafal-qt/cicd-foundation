@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Antigravity 2.0
+Comment=Antigravity 2.0
+Exec=/usr/local/bin/antigravity
+Icon=applications-other
+Terminal=false
+Type=Application
+X-GNOME-Autostart-enabled=true

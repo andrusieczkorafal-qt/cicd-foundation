@@ -50,4 +50,7 @@ wait_for_monitor() {
     sleep "${DESKTOP_POLL_INTERVAL}"
     elapsed=$(echo "${elapsed} + ${DESKTOP_POLL_INTERVAL}" | bc -l)
   done
+
+  # Add an unconditional delay after monitor detection for application stability.
+  sleep "${APP_STARTUP_DELAY:-0}"
 }

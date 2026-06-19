@@ -26,6 +26,7 @@ build:
         network: cloudbuild
         buildArgs:
           CWS_BASE_IMAGE_TAG: '{{.CWS_BASE_IMAGE_TAG | default "latest"}}'
+          ALPINE_VERSION: '{{.ALPINE_VERSION | default "3.19"}}'
           GCP_REGION: '{{.GCP_REGION | default "us-central1"}}'
           PREFLIGHT_WEB_REPO: '{{.PREFLIGHT_WEB_REPO | default ""}}'
           PREFLIGHT_WEB_DIR: '{{.PREFLIGHT_WEB_DIR | default ""}}'
